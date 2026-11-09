@@ -136,9 +136,52 @@ system Python installation or the temporary directory used to unpack a bundle.
 Automatic updates still require the systemd user manager described below.
 No configuration, list or scheduler is activated just by installing the binary.
 
-## Run from source
+## Install and run from the repository (without binaries)
 
-From the project directory:
+This method runs the Python source directly. **No binary download, compilation,
+`pip install` or virtual environment is needed.** Keep the complete checkout:
+the `run` launcher needs the adjacent `zyfeed/` package, not just the launcher file.
+
+### Requirements
+
+- Linux.
+- Git.
+- Python **3.11 or newer**, available as `python3`.
+- A systemd user manager only if you want the optional automatic-update timer;
+  manual conversion and updates do not need systemd.
+
+On Raspberry Pi OS Bookworm or newer, Debian 12+ or Ubuntu 24.04+, install
+the prerequisites if missing:
+
+```sh
+sudo apt install git python3
+python3 --version
+```
+
+Check that Python reports 3.11 or newer before continuing. On other Linux
+distributions, install Git and a compatible Python using their package manager.
+Installing Python packages with `pip` is not necessary for normal use.
+
+### Clone and launch
+
+Run these commands as your normal user, in a directory you can write to.
+For example, clone into your home directory:
+
+```sh
+cd "$HOME"
+git clone https://github.com/M4v3r1cK87/zyfeed.git
+cd zyfeed
+
+./run --version
+./run --help
+```
+
+Do not use `sudo` for cloning, launching ZyFeed or updating the checkout.
+Choose another writable location if desired; the application does not require
+installation under `/opt`. Cloning does not select a real source, download any
+blocklist or enable a timer.
+
+From inside the cloned project directory, explore the commands:
 
 ```sh
 ./run
@@ -154,6 +197,58 @@ the executable permission, restore it once with `chmod +x run`.
 their complete guides without performing any operation. Supply a source,
 update options or a scheduler action to execute the operation instead.
 Incomplete/invalid options still report an error.
+
+### Configure your own feeds
+
+On a new checkout, copy the templates once:
+
+```sh
+cp examples/zyfeed.example.toml zyfeed.toml
+cp examples/overrides.example.txt overrides.txt
+```
+
+Open the copied files with your text editor:
+
+1. In `zyfeed.toml`, replace the placeholder `url` with your source URL and
+   choose `name`, `format`, `output_dir` and `state_dir`.
+2. Keep `overrides = "overrides.txt"` if you want local additions/removals;
+   replace the synthetic entries in `overrides.txt` with your own rules.
+   Otherwise remove the `overrides` setting.
+3. Keep private state separate from exported files. Relative paths in TOML
+   resolve against the configuration file's directory.
+
+The [TOML guide](#what-is-toml) explains every setting. Do not edit
+`pyproject.toml` to configure feeds, and do not recopy templates over files
+you have already customized.
+
+Run an update manually:
+
+```sh
+./run update --config zyfeed.toml
+```
+
+With the template paths, the results go into `var/output` and private cache
+into `var/state`. This command runs once and exits. To enable automatic checks
+later, follow [optional automatic updates](#optional-automatic-updates);
+enabling the timer requires your confirmation.
+
+### Update the application code
+
+From your existing checkout:
+
+```sh
+git pull --ff-only origin main
+./run --version
+```
+
+No reinstall or rebuild is needed. Your root-level `zyfeed.toml`, `overrides.txt`
+and `var/` are excluded from Git, so pulling code does not replace those local
+settings or generated files. Keep any custom configuration inside these ignored
+paths or outside the checkout; do not commit private configuration.
+
+If Git reports local source changes or a branch conflict, inspect them rather
+than discarding them. Keep the checkout and Python interpreter at their original
+paths while a timer is configured; re-enable the schedule if those paths change.
 
 ### Which command needs a configuration file?
 
