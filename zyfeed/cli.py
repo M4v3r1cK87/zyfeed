@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import logging
+import shlex
 import sys
 from collections.abc import Sequence
 from pathlib import Path
@@ -47,11 +48,23 @@ class Arguments(argparse.Namespace):
 
 
 def _arguments(argv: Sequence[str] | None) -> Arguments:
+    frozen = getattr(sys, "frozen", False) is True
+    program = (
+        shlex.quote(str(Path(sys.executable).absolute()))
+        if frozen
+        else "./run"
+        if Path(sys.argv[0]).name == "run"
+        else "zyfeed"
+    )
+
+    def examples(text: str) -> str:
+        return text.replace("./run", program) if frozen else text
+
     parser = argparse.ArgumentParser(
-        prog="./run" if Path(sys.argv[0]).name == "run" else "zyfeed",
+        prog=program,
         description="Convert and refresh blocklists in Zyxel DNS/URL format.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
+        epilog=examples(
             "One conversion, with an optional override file (no TOML needed):\n"
             "  ./run convert input.txt --overrides overrides.txt -o blocklist.txt\n"
             "\n"
@@ -92,7 +105,7 @@ def _arguments(argv: Sequence[str] | None) -> Arguments:
             "No TOML configuration is required for this command."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
+        epilog=examples(
             "Examples:\n"
             "  # Convert the local synthetic example and print TXT to the terminal:\n"
             "  ./run convert examples/blocklist.adblock.txt\n"
@@ -162,7 +175,7 @@ def _arguments(argv: Sequence[str] | None) -> Arguments:
             "Expires controls source checks per feed."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
+        epilog=examples(
             "Examples:\n"
             "  # Show this guide without updating anything:\n"
             "  ./run update\n"
@@ -221,7 +234,7 @@ def _arguments(argv: Sequence[str] | None) -> Arguments:
             "This does not change system-wide services."
         ),
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
+        epilog=examples(
             "Examples:\n"
             "  # After configuring and testing your feeds, enable automatic checks:\n"
             "  ./run schedule enable --config zyfeed.toml\n"
@@ -264,7 +277,7 @@ def _arguments(argv: Sequence[str] | None) -> Arguments:
         help="confirm and enable 15-minute checks",
         description="Enable a systemd user timer after explicit confirmation.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
+        epilog=examples(
             "Examples:\n"
             "  ./run schedule enable --config zyfeed.toml\n"
             "  ./run schedule enable --config /path/to/zyfeed.toml --yes\n"
@@ -289,7 +302,7 @@ def _arguments(argv: Sequence[str] | None) -> Arguments:
         help="confirm and stop future checks",
         description="Stop future checks after explicit confirmation.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
+        epilog=examples(
             "Examples:\n"
             "  ./run schedule disable\n"
             "  ./run schedule disable --yes\n"
@@ -307,7 +320,7 @@ def _arguments(argv: Sequence[str] | None) -> Arguments:
         help="show current user timer state without changes",
         description="Inspect the current user's timer without changing it.",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=(
+        epilog=examples(
             "Example:\n"
             "  ./run schedule status\n"
             "\n"

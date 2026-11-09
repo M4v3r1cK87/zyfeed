@@ -18,8 +18,8 @@ jobs:
           python-version: ${{ matrix.python }}
       - run: python -m pip install -e '.[dev]'
       - run: ./run --help
-      - run: ruff format --check run zyfeed tests
-      - run: ruff check run zyfeed tests
+      - run: ruff format --check run zyfeed tests .github/smoke_binary.py
+      - run: ruff check run zyfeed tests .github/smoke_binary.py
       - run: mypy
       - run: python -B -m unittest discover -s tests -v
       - run: python -m pip wheel --no-deps . --wheel-dir dist

@@ -19,10 +19,10 @@ You decide how to use the result: keep it locally, import it into a compatible
 application, copy it elsewhere, or make it available through a URL yourself.
 That distribution/import step is outside ZyFeed.
 
-Python 3.11+ on Linux. No third-party runtime dependencies. The target format
-follows the Zyxel manual, not workarounds for individual firmware versions.
-The [run](run) executable uses your system Python: no `pip`, virtual environment
-or build step is needed.
+Available as prebuilt Linux AMD64/ARM64 executables, or as Python source.
+Prebuilt executables include Python; running the source requires Python 3.11+
+on Linux and has no third-party runtime dependencies. The target format follows
+the Zyxel manual, not workarounds for individual firmware versions.
 
 **No real blocklists or active feed configurations are included.** The supplied
 input, overrides and source URLs are examples using reserved domains. Installing
@@ -46,7 +46,97 @@ or enable a scheduler.
 - Direct executable, CLI help, JSON metadata, confirmed systemd user scheduling,
   systemd examples and GitHub Actions CI.
 
-## Quick start
+## Install a prebuilt Linux binary
+
+Download from [GitHub Releases](https://github.com/M4v3r1cK87/zyfeed/releases/latest).
+Each archive contains the standalone `zyfeed` executable, documentation,
+synthetic configuration/override examples and license notices.
+**No Python, pip or virtual environment is needed on the target machine.**
+
+| `uname -m` | Archive architecture | Typical target |
+| --- | --- | --- |
+| `x86_64` | `amd64` | 64-bit Intel/AMD PCs, servers and NAS devices |
+| `aarch64` | `arm64` | Raspberry Pi and other ARM systems with a 64-bit OS |
+| `armv7l` | Not provided | A 32-bit OS cannot run the ARM64 executable |
+
+Builds target Ubuntu 22.04/glibc 2.35. Use a compatible 64-bit glibc-based Linux
+distribution, such as Raspberry Pi OS Bookworm or newer. Older glibc systems,
+Alpine/musl, Windows and macOS are not supported by these binary releases.
+
+### Download, verify and install
+
+Run these commands as your normal user in a writable download directory.
+For Raspberry Pi **64-bit**, use `ARCH=arm64`; for an Intel/AMD **64-bit** OS,
+change that line to `ARCH=amd64`. This example installs release `v0.1.0`:
+
+```sh
+VERSION=0.1.0
+ARCH=arm64
+BASE="https://github.com/M4v3r1cK87/zyfeed/releases/download/v$VERSION"
+ARCHIVE="zyfeed-v$VERSION-linux-$ARCH.tar.gz"
+
+curl --fail --location --remote-name "$BASE/$ARCHIVE"
+curl --fail --location --remote-name "$BASE/SHA256SUMS"
+
+sha256sum --check --ignore-missing SHA256SUMS &&
+tar -xzf "$ARCHIVE" &&
+install -Dm755 "zyfeed-v$VERSION-linux-$ARCH/zyfeed" "$HOME/.local/bin/zyfeed"
+
+"$HOME/.local/bin/zyfeed" --version
+"$HOME/.local/bin/zyfeed" --help
+```
+
+The checksum command must report `OK` for the archive you downloaded. It ignores
+the other architecture's archive if that file is absent. Do not continue after
+a failed checksum. Install separately from a source checkout: do not overwrite
+the checkout's `zyfeed/` Python package directory with the binary.
+
+Use the full installed path as above, or add `$HOME/.local/bin` to your shell's
+`PATH` to invoke `zyfeed` directly.
+
+### Configure and use the binary
+
+From the same download directory:
+
+```sh
+mkdir -p "$HOME/.config/zyfeed"
+cp "zyfeed-v$VERSION-linux-$ARCH/examples/zyfeed.example.toml" \
+  "$HOME/.config/zyfeed/zyfeed.toml"
+cp "zyfeed-v$VERSION-linux-$ARCH/examples/overrides.example.txt" \
+  "$HOME/.config/zyfeed/overrides.txt"
+```
+
+Edit those copied files: replace the placeholder source URL, choose your output
+and private-state directories, and replace the example override rules.
+The [TOML guide](#what-is-toml) explains every setting. Relative paths resolve
+against the configuration file, not the binary's installation directory.
+
+```sh
+# Convert a local file once, with your own override rules.
+"$HOME/.local/bin/zyfeed" convert input.txt \
+  --overrides overrides.txt --output blocklist.txt
+
+# Refresh sources from your saved configuration.
+"$HOME/.local/bin/zyfeed" update --config "$HOME/.config/zyfeed/zyfeed.toml"
+
+# Optional automatic updates; asks for confirmation.
+"$HOME/.local/bin/zyfeed" schedule enable \
+  --config "$HOME/.config/zyfeed/zyfeed.toml"
+"$HOME/.local/bin/zyfeed" schedule status
+"$HOME/.local/bin/zyfeed" schedule disable
+```
+
+The binary has the same commands as the source launcher. In the rest of this
+README, replace `./run` with the installed binary path when using a release.
+Its help examples automatically use the binary's actual path.
+
+Keep the executable at its permanent installation path when enabling a timer.
+The generated timer invokes that binary directly; it does not depend on a
+system Python installation or the temporary directory used to unpack a bundle.
+Automatic updates still require the systemd user manager described below.
+No configuration, list or scheduler is activated just by installing the binary.
+
+## Run from source
 
 From the project directory:
 
@@ -674,6 +764,32 @@ thresholds, atomic failure, CLI behavior, real HTTP conditional requests,
 expiry scheduling, changed overrides before expiry, last-good preservation,
 installation-free execution and confirmed scheduling with mocked systemd calls.
 CI targets Python 3.11 and 3.13.
+
+### Building and publishing native releases
+
+[The release workflow](.github/workflows/release.yml) is triggered by a `v*` tag.
+It builds separately on native Ubuntu 22.04 AMD64 and ARM64 runners, validates
+the source, and exercises the actual bundled executables with no Python on
+their `PATH`. Binary smoke tests cover local/HTTPS conversion, conditional
+downloads and systemd units that remain usable after the first process exits.
+
+The build dependency is pinned in the `build` optional dependency group.
+Build work directories live outside the checkout; normal users do not need
+any of the build tools.
+
+For a new release, update the version in [pyproject.toml](pyproject.toml) and
+[zyfeed/__init__.py](zyfeed/__init__.py), commit and push it, then create the
+matching tag. For example, for version `0.1.0`:
+
+```sh
+git tag v0.1.0
+git push origin v0.1.0
+```
+
+The workflow rejects tag/version mismatches. Only after both architectures
+pass does it upload both archives and `SHA256SUMS` to a draft release, verify
+the assets, then make the release public. Bundled Python and PyInstaller license
+notices are included alongside the application's MIT license.
 
 ## License
 

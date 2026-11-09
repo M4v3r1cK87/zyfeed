@@ -85,6 +85,21 @@ class SchedulerTests(unittest.TestCase):
         self.assertEqual(service.count('"--config"'), 1)
         self.assertIn(str(self.config.resolve()), service)
 
+    def test_frozen_units_invoke_the_permanent_binary_not_python(self) -> None:
+        binary = self.root / "installed binary" / "zyfeed"
+        with (
+            patch("sys.frozen", True, create=True),
+            patch("sys.executable", str(binary)),
+            patch("zyfeed.scheduler.__file__", "/tmp/_MEIexample/zyfeed/scheduler.py"),
+        ):
+            service, _ = render_units(self.config)
+        text = service.decode()
+        self.assertIn(f'ExecStart="{binary}" "update" "--config"', text)
+        self.assertIn(f"WorkingDirectory={self.config.parent}\n", text)
+        self.assertNotIn('"-B"', text)
+        self.assertNotIn('"-m"', text)
+        self.assertNotIn("_MEIexample", text)
+
     def test_no_manager_is_an_explicit_failure_without_creating_units(self) -> None:
         with patch(
             "zyfeed.scheduler._systemctl", side_effect=ZyFeedError("no user manager")

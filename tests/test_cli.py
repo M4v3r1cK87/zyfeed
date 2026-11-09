@@ -1,14 +1,42 @@
 from __future__ import annotations
 
+import io
 import json
 import subprocess
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stdout
 from pathlib import Path
+from unittest.mock import patch
+
+from zyfeed.cli import main
 
 
 class CLITests(unittest.TestCase):
+    def test_frozen_help_uses_the_installed_binary_in_every_example(self) -> None:
+        for arguments in (
+            [],
+            ["convert"],
+            ["update"],
+            ["schedule"],
+            ["schedule", "enable", "--help"],
+            ["schedule", "disable", "--help"],
+            ["schedule", "status", "--help"],
+        ):
+            with self.subTest(arguments=arguments):
+                output = io.StringIO()
+                with (
+                    patch("sys.frozen", True, create=True),
+                    patch("sys.executable", "/opt/zyfeed-bin/zyfeed"),
+                    redirect_stdout(output),
+                    self.assertRaises(SystemExit) as result,
+                ):
+                    main(arguments)
+                self.assertEqual(result.exception.code, 0)
+                self.assertIn("/opt/zyfeed-bin/zyfeed", output.getvalue())
+                self.assertNotIn("./run", output.getvalue())
+
     def run_cli(self, *arguments: str) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             [sys.executable, "-m", "zyfeed", *arguments],

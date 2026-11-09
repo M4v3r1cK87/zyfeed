@@ -40,23 +40,30 @@ def _unit_value(value: str, *, command: bool = False) -> str:
 
 
 def render_units(config_path: Path) -> tuple[bytes, bytes]:
-    project = Path(__file__).resolve().parent.parent
-    arguments = (
-        str(Path(sys.executable).absolute()),
-        "-B",
-        "-m",
-        "zyfeed",
-        "update",
-        "--config",
-        str(config_path.resolve()),
-    )
+    config_path = config_path.resolve()
+    executable = str(Path(sys.executable).absolute())
+    arguments: tuple[str, ...]
+    if getattr(sys, "frozen", False) is True:
+        working_directory = config_path.parent
+        arguments = (executable, "update", "--config", str(config_path))
+    else:
+        working_directory = Path(__file__).resolve().parent.parent
+        arguments = (
+            executable,
+            "-B",
+            "-m",
+            "zyfeed",
+            "update",
+            "--config",
+            str(config_path),
+        )
     command = " ".join(_unit_value(argument, command=True) for argument in arguments)
     service = (
         MARKER + "[Unit]\n"
         "Description=Refresh and publish ZyFeed blocklists\n\n"
         "[Service]\n"
         "Type=oneshot\n"
-        f"WorkingDirectory={_unit_value(str(project))}\n"
+        f"WorkingDirectory={_unit_value(str(working_directory))}\n"
         f"ExecStart={command}\n"
         "Environment=PYTHONDONTWRITEBYTECODE=1\n"
         "UMask=0027\n"
