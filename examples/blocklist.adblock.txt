@@ -1,0 +1,7 @@
+[Adblock Plus]
+! Title: ZyFeed example blocklist
+! Description: Synthetic rules using reserved example domains, not a real blocklist.
+! Expires: 8 hours
+! Version: 1
+||tracker.example.org^
+||metrics.example.net^

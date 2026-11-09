@@ -1,0 +1,10 @@
+# Synthetic operations for blocklist.adblock.txt in this directory.
+# Replace these entries with your own rules before using a real source.
++ extra.example.org
++ *.extra.example.org
+- metrics.example.net
+- *.metrics.example.net
+#
+# Removals win, irrespective of line order.
+# Removals select exported entry hosts; they are NOT firewall allow rules.
+# Removing a specific host does not carve a hole in a broader wildcard.

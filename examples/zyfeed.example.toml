@@ -1,0 +1,24 @@
+# Template only: replace the reserved example URL with your own source.
+# Copy this file to zyfeed.toml for ./run update --config zyfeed.toml.
+# Paths are relative to this configuration file, not to the current directory.
+
+# Shared settings: where exports and private cached sources are stored.
+output_dir = "var/output"
+state_dir = "var/state"
+# Used only when the upstream list has no Expires header.
+default_expires = "24 hours"
+# HTTP socket timeout in seconds.
+timeout = 30
+
+# One [[feeds]] block per input list. Repeat the block to add another list.
+[[feeds]]
+# This name becomes example.txt and example.json in output_dir.
+name = "example"
+url = "https://example.org/blocklist.txt"
+format = "adblock"
+# Optional + / - rules for this feed. Remove this line if no overrides are needed.
+overrides = "overrides.txt"
+# Keep TXT exports header-free unless the firewall accepts # comments.
+comments = false
+# Reject an accidentally empty export.
+allow_empty = false

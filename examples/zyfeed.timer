@@ -1,0 +1,10 @@
+[Unit]
+Description=Check ZyFeed refresh deadlines every 15 minutes
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+Unit=zyfeed.service
+
+[Install]
+WantedBy=timers.target

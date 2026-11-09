@@ -1,0 +1,20 @@
+[Unit]
+Description=Refresh and publish ZyFeed blocklists
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=zyfeed
+Group=zyfeed
+WorkingDirectory=/opt/zyfeed
+ExecStart=/opt/zyfeed/run update --config /etc/zyfeed/zyfeed.toml
+Environment=PYTHONDONTWRITEBYTECODE=1
+StateDirectory=zyfeed
+StateDirectoryMode=0700
+UMask=0027
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/lib/zyfeed
